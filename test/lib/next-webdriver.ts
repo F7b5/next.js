@@ -220,7 +220,9 @@ export default async function webdriver(
   previousBrowser = browser
 
   afterCurrentTest(async () => {
-    await browser.close()
+    if (!browser.isClosed()) {
+      await browser.close()
+    }
     if (previousBrowser === browser) {
       previousBrowser = null
     }
