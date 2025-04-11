@@ -1,7 +1,13 @@
 import { getFullUrl, waitFor } from 'next-test-utils'
 import os from 'os'
-import { Playwright } from './browsers/playwright'
-import { Page } from 'playwright'
+import type {
+  BrowserContextOptions,
+  BrowserContextWrapper,
+  BrowserOptions,
+  Playwright,
+  SharedPlaywrightState,
+} from './browsers/playwright'
+import type { Page } from 'playwright'
 
 export type { Playwright }
 
@@ -53,16 +59,15 @@ function createAfterCurrentTest() {
 
 const afterCurrentTest = createAfterCurrentTest()
 
+let sharedState: SharedPlaywrightState | null = null
 let previousBrowser: Playwright | null = null
-let browserQuit: (() => Promise<void>) | undefined
 
-if (typeof afterAll === 'function') {
-  afterAll(async () => {
-    if (browserQuit) {
-      await browserQuit()
-    }
-  })
-}
+afterAll(async () => {
+  if (sharedState) {
+    await sharedState.close()
+    sharedState = null
+  }
+})
 
 export interface WebdriverOptions {
   /**
@@ -114,7 +119,7 @@ export interface WebdriverOptions {
 export default async function webdriver(
   appPortOrUrl: string | number,
   url: string,
-  options?: WebdriverOptions
+  options: WebdriverOptions = {}
 ): Promise<Playwright> {
   if (previousBrowser) {
     console.warn(
@@ -124,44 +129,74 @@ export default async function webdriver(
     previousBrowser = null
   }
 
-  const defaultOptions = {
-    waitHydration: true,
-    retryWaitHydration: false,
-    disableCache: false,
-  }
-  options = Object.assign(defaultOptions, options)
   const {
-    waitHydration,
-    retryWaitHydration,
-    disableCache,
+    waitHydration = true,
+    retryWaitHydration = false,
+    disableCache = false,
     beforePageLoad,
-    locale,
-    disableJavaScript,
-    ignoreHTTPSErrors,
-    headless,
-    cpuThrottleRate,
-    pushErrorAsConsoleLog,
-    userAgent,
+    locale = undefined,
+    disableJavaScript = false,
+    ignoreHTTPSErrors = false,
+    headless = !!process.env.HEADLESS,
+    cpuThrottleRate = undefined,
+    pushErrorAsConsoleLog = false,
+    userAgent = undefined,
   } = options
 
-  const { Playwright, quit } = await import('./browsers/playwright')
-  browserQuit = quit
+  const { Playwright, SharedPlaywrightState } = await import(
+    './browsers/playwright'
+  )
 
-  const browser = new Playwright()
+  const browserOptions: BrowserOptions = {
+    browserName: process.env.BROWSER_NAME || 'chrome',
+    headless,
+    enableTracing: !!process.env.TRACE_PLAYWRIGHT,
+  }
+  const browserContextOptions: BrowserContextOptions = {
+    locale,
+    javaScriptEnabled: !disableJavaScript,
+    ignoreHTTPSErrors,
+    userAgent,
+    deviceName: process.env.DEVICE_NAME || undefined,
+  }
+
+  let context: BrowserContextWrapper
+  if (!sharedState) {
+    sharedState = await SharedPlaywrightState.create(
+      browserOptions,
+      browserContextOptions
+    )
+    context = sharedState.defaultContext
+  } else {
+    if (sharedState.canReuseBrowser(browserOptions)) {
+      context = await sharedState.updateDefaultBrowserContext(
+        browserContextOptions
+      )
+    } else {
+      await sharedState.close()
+      sharedState = await SharedPlaywrightState.create(
+        browserOptions,
+        browserContextOptions
+      )
+      context = sharedState.defaultContext
+    }
+  }
+
+  const browser = new Playwright(sharedState, context)
   previousBrowser = browser
 
-  const browserName = process.env.BROWSER_NAME || 'chrome'
-  await browser.setup(
-    browserName,
-    locale,
-    !disableJavaScript,
-    ignoreHTTPSErrors,
-    // allow headless to be overwritten for a particular test
-    typeof headless !== 'undefined' ? headless : !!process.env.HEADLESS,
-    userAgent
-  )
-  ;(global as any).browserName = browserName
+  afterCurrentTest(async () => {
+    await browser.close()
+    if (previousBrowser === browser) {
+      previousBrowser = null
+    }
+  })
+  ;(global as any).browserName = browserOptions.browserName
 
+  // TODO: `appPortOrUrl` can change if the next server is stopped and started again
+  // some tests work around this:
+  // - test/production/prerender-prefetch/index.test.ts
+  // - test/development/app-dir/dev-indicator/hide-button.test.ts
   const fullUrl = getFullUrl(
     appPortOrUrl,
     url,
@@ -179,13 +214,6 @@ export default async function webdriver(
     retryWaitHydration,
   })
   console.log(`\n> Loaded browser with ${fullUrl}\n`)
-
-  afterCurrentTest(async () => {
-    await browser.close()
-    if (previousBrowser === browser) {
-      previousBrowser = null
-    }
-  })
 
   // This is a temporary workaround for turbopack starting watching too late.
   // So we delay file changes to give it some time
