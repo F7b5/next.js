@@ -53,6 +53,7 @@ function createAfterCurrentTest() {
 
 const afterCurrentTest = createAfterCurrentTest()
 
+let previousBrowser: Playwright | null = null
 let browserQuit: (() => Promise<void>) | undefined
 
 if (typeof afterAll === 'function') {
@@ -115,6 +116,14 @@ export default async function webdriver(
   url: string,
   options?: WebdriverOptions
 ): Promise<Playwright> {
+  if (previousBrowser) {
+    console.warn(
+      'Calling `next.browser()` multiple times in a single test is not recommended. use `browser.loadPage()` instead.'
+    )
+    await previousBrowser.close()
+    previousBrowser = null
+  }
+
   const defaultOptions = {
     waitHydration: true,
     retryWaitHydration: false,
@@ -139,6 +148,8 @@ export default async function webdriver(
   browserQuit = quit
 
   const browser = new Playwright()
+  previousBrowser = browser
+
   const browserName = process.env.BROWSER_NAME || 'chrome'
   await browser.setup(
     browserName,
@@ -171,6 +182,9 @@ export default async function webdriver(
 
   afterCurrentTest(async () => {
     await browser.close()
+    if (previousBrowser === browser) {
+      previousBrowser = null
+    }
   })
 
   // This is a temporary workaround for turbopack starting watching too late.
