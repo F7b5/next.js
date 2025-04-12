@@ -170,7 +170,18 @@ export class Playwright extends BrowserInterface {
 
   async close(): Promise<void> {
     await teardown(this.teardownTracing.bind(this))
-    await page?.close()
+    if (page && !page.isClosed()) {
+      await page.close()
+    }
+
+    // clean-up existing pages
+    await Promise.all(
+      context.pages().map(async (oldPage) => {
+        if (!oldPage.isClosed()) {
+          await oldPage.close()
+        }
+      })
+    )
   }
 
   async launchBrowser(browserName: string, launchOptions: Record<string, any>) {
@@ -212,11 +223,6 @@ export class Playwright extends BrowserInterface {
     }
   ) {
     await this.close()
-
-    // clean-up existing pages
-    for (const oldPage of context.pages()) {
-      await oldPage.close()
-    }
 
     await this.initContextTracing(url, context)
     page = await context.newPage()
