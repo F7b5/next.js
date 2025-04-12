@@ -5,6 +5,8 @@
     "allowJs": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "moduleDetection": "force",
     "jsx": "react-jsx",
     "module": "ESNext",
     "target": "ESNext",
@@ -23,9 +25,16 @@
   },
   "include": [
     "test/**/*.test.ts",
+    "test/**/*.test.js",
     "test/**/*.test.tsx",
     "test/e2e/app-dir/use-cache-custom-handler/*.js",
     "test/lib/**/*.ts",
     "turbo/**/*.ts"
+  ],
+  "files": ["test/next-dist-compiled-types.ts"],
+  "exclude": [
+    "**/node_modules",
+    "packages/next/src/compiled/**",
+    "packages/next/dist/**"
   ]
 }
