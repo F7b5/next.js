@@ -26,8 +26,7 @@ import _pkg from 'next/package.json'
 import type { SpawnOptions, ChildProcess } from 'child_process'
 import type { RequestInit, Response } from 'node-fetch'
 import type { NextServer } from 'next/dist/server/next'
-import { BrowserInterface } from './browsers/base'
-import { Playwright } from './browsers/playwright'
+import { Playwright } from 'next-webdriver'
 
 import { getTurbopackFlag, shouldRunTurboDevTest } from './turbo'
 import stripAnsi from 'strip-ansi'
@@ -825,11 +824,8 @@ export async function retry<T>(
   }
 }
 
-export async function assertHasRedbox(browser: BrowserInterface) {
-  // TODO: Implement for other BrowserInterface implementations
-  const playwright = browser as Playwright
-
-  const redbox = playwright.locateRedbox()
+export async function assertHasRedbox(browser: Playwright) {
+  const redbox = browser.locateRedbox()
   try {
     await redbox.waitFor({ timeout: 5000 })
   } catch (errorCause) {
@@ -851,12 +847,9 @@ export async function assertHasRedbox(browser: BrowserInterface) {
   }
 }
 
-export async function assertNoRedbox(browser: BrowserInterface) {
-  // TODO: Implement for other BrowserInterface implementations
-  const playwright = browser as Playwright
-
+export async function assertNoRedbox(browser: Playwright) {
   await waitFor(5000)
-  const redbox = playwright.locateRedbox()
+  const redbox = browser.locateRedbox()
 
   if (await redbox.isVisible()) {
     const [redboxHeader, redboxDescription, redboxSource] = await Promise.all([
@@ -876,9 +869,7 @@ export async function assertNoRedbox(browser: BrowserInterface) {
   }
 }
 
-export async function hasErrorToast(
-  browser: BrowserInterface
-): Promise<boolean> {
+export async function hasErrorToast(browser: Playwright): Promise<boolean> {
   return Boolean(
     await browser.eval(() => {
       const portal = [].slice
@@ -892,9 +883,7 @@ export async function hasErrorToast(
   )
 }
 
-export async function getToastErrorCount(
-  browser: BrowserInterface
-): Promise<number> {
+export async function getToastErrorCount(browser: Playwright): Promise<number> {
   return parseInt(
     (await browser.eval(() => {
       const portal = [].slice
@@ -904,7 +893,7 @@ export async function getToastErrorCount(
       const root = portal?.shadowRoot
       const node = root?.querySelector('[data-issues-count]')
       return node?.innerText || '0'
-    })) ?? 0
+    })) ?? '0'
   )
 }
 
@@ -912,10 +901,8 @@ export async function getToastErrorCount(
  * Has retried version of {@link hasErrorToast} built-in.
  * Success implies {@link assertHasRedbox}.
  */
-export async function openRedbox(browser: BrowserInterface): Promise<void> {
-  // TODO: Implement for other BrowserInterface implementations
-  const playwright = browser as Playwright
-  const redbox = playwright.locateRedbox()
+export async function openRedbox(browser: Playwright): Promise<void> {
+  const redbox = browser.locateRedbox()
   if (await redbox.isVisible()) {
     const error = new Error(
       'Redbox is already open. Use `assertHasRedbox` instead.'
@@ -935,7 +922,7 @@ export async function openRedbox(browser: BrowserInterface): Promise<void> {
 }
 
 export async function openDevToolsIndicatorPopover(
-  browser: BrowserInterface
+  browser: Playwright
 ): Promise<void> {
   const devToolsIndicator = await assertHasDevToolsIndicator(browser)
 
@@ -948,11 +935,8 @@ export async function openDevToolsIndicatorPopover(
   }
 }
 
-export async function assertHasDevToolsIndicator(browser: BrowserInterface) {
-  // TODO: Implement for other BrowserInterface implementations
-  const playwright = browser as Playwright
-
-  const devToolsIndicator = playwright.locateDevToolsIndicator()
+export async function assertHasDevToolsIndicator(browser: Playwright) {
+  const devToolsIndicator = browser.locateDevToolsIndicator()
   try {
     await devToolsIndicator.waitFor({ timeout: 5000 })
   } catch (errorCause) {
@@ -966,11 +950,8 @@ export async function assertHasDevToolsIndicator(browser: BrowserInterface) {
   return devToolsIndicator
 }
 
-export async function assertNoDevToolsIndicator(browser: BrowserInterface) {
-  // TODO: Implement for other BrowserInterface implementations
-  const playwright = browser as Playwright
-
-  const devToolsIndicator = playwright.locateDevToolsIndicator()
+export async function assertNoDevToolsIndicator(browser: Playwright) {
+  const devToolsIndicator = browser.locateDevToolsIndicator()
 
   if (await devToolsIndicator.isVisible()) {
     const error = new Error(
@@ -982,7 +963,7 @@ export async function assertNoDevToolsIndicator(browser: BrowserInterface) {
 }
 
 export async function getRouteTypeFromDevToolsIndicator(
-  browser: BrowserInterface
+  browser: Playwright
 ): Promise<'Static' | 'Dynamic'> {
   await openDevToolsIndicatorPopover(browser)
 
@@ -1012,9 +993,7 @@ export async function getRouteTypeFromDevToolsIndicator(
   })
 }
 
-export function getRedboxHeader(
-  browser: BrowserInterface
-): Promise<string | null> {
+export function getRedboxHeader(browser: Playwright): Promise<string | null> {
   return browser.eval(() => {
     const portal = [].slice
       .call(document.querySelectorAll('nextjs-portal'))
@@ -1025,7 +1004,7 @@ export function getRedboxHeader(
 }
 
 export async function getRedboxTotalErrorCount(
-  browser: BrowserInterface
+  browser: Playwright
 ): Promise<number> {
   const text = await browser.eval(() => {
     const portal = [].slice
@@ -1041,9 +1020,7 @@ export async function getRedboxTotalErrorCount(
   return parseInt(text || '-1')
 }
 
-export function getRedboxSource(
-  browser: BrowserInterface
-): Promise<string | null> {
+export function getRedboxSource(browser: Playwright): Promise<string | null> {
   return browser.eval(() => {
     const portal = [].slice
       .call(document.querySelectorAll('nextjs-portal'))
@@ -1060,9 +1037,7 @@ export function getRedboxSource(
   })
 }
 
-export function getRedboxTitle(
-  browser: BrowserInterface
-): Promise<string | null> {
+export function getRedboxTitle(browser: Playwright): Promise<string | null> {
   return browser.eval(() => {
     const portal = [].slice
       .call(document.querySelectorAll('nextjs-portal'))
@@ -1076,9 +1051,7 @@ export function getRedboxTitle(
   })
 }
 
-export function getRedboxLabel(
-  browser: BrowserInterface
-): Promise<string | null> {
+export function getRedboxLabel(browser: Playwright): Promise<string | null> {
   return browser.eval(() => {
     const portal = [].slice
       .call(document.querySelectorAll('nextjs-portal'))
@@ -1091,7 +1064,7 @@ export function getRedboxLabel(
 }
 
 export function getRedboxEnvironmentLabel(
-  browser: BrowserInterface
+  browser: Playwright
 ): Promise<string | null> {
   return browser.eval(() => {
     const portal = [].slice
@@ -1106,7 +1079,7 @@ export function getRedboxEnvironmentLabel(
 }
 
 export function getRedboxDescription(
-  browser: BrowserInterface
+  browser: Playwright
 ): Promise<string | null> {
   return browser.eval(() => {
     const portal = [].slice
@@ -1120,7 +1093,7 @@ export function getRedboxDescription(
 }
 
 export function getRedboxDescriptionWarning(
-  browser: BrowserInterface
+  browser: Playwright
 ): Promise<string | null> {
   return browser.eval(() => {
     const portal = [].slice
@@ -1134,7 +1107,7 @@ export function getRedboxDescriptionWarning(
 }
 
 export function getRedboxErrorLink(
-  browser: BrowserInterface
+  browser: Playwright
 ): Promise<string | null> {
   return browser.eval(() => {
     const portal = [].slice
@@ -1147,7 +1120,7 @@ export function getRedboxErrorLink(
   })
 }
 
-export function getBrowserBodyText(browser: BrowserInterface) {
+export function getBrowserBodyText(browser: Playwright) {
   return browser.eval('document.getElementsByTagName("body")[0].innerText')
 }
 
@@ -1370,7 +1343,7 @@ export function getSnapshotTestDescribe(variant: TestVariants) {
  * @returns `null` if there are no frames
  */
 export async function getRedboxComponentStack(
-  browser: BrowserInterface
+  browser: Playwright
 ): Promise<string | null> {
   const componentStackFrameElements = await browser.elementsByCss(
     '[data-nextjs-container-errors-pseudo-html] code'
@@ -1386,7 +1359,7 @@ export async function getRedboxComponentStack(
   return componentStackFrameTexts.join('\n').trim()
 }
 
-export async function hasRedboxCallStack(browser: BrowserInterface) {
+export async function hasRedboxCallStack(browser: Playwright) {
   return browser.eval(() => {
     const portal = [].slice
       .call(document.querySelectorAll('nextjs-portal'))
@@ -1398,7 +1371,7 @@ export async function hasRedboxCallStack(browser: BrowserInterface) {
 }
 
 export async function getRedboxCallStack(
-  browser: BrowserInterface
+  browser: Playwright
 ): Promise<string[] | null> {
   return browser.eval(() => {
     const portal = [].slice
@@ -1448,7 +1421,7 @@ export async function getRedboxCallStack(
 }
 
 export async function getRedboxCallStackCollapsed(
-  browser: BrowserInterface
+  browser: Playwright
 ): Promise<string> {
   const callStackFrameElements = await browser.elementsByCss(
     '.nextjs-container-errors-body > [data-nextjs-codeframe] > :first-child, ' +
@@ -1463,7 +1436,7 @@ export async function getRedboxCallStackCollapsed(
 }
 
 export async function getVersionCheckerText(
-  browser: BrowserInterface
+  browser: Playwright
 ): Promise<string> {
   await browser.waitForElementByCss('[data-nextjs-version-checker]', 30000)
   const versionCheckerElement = await browser.elementByCss(
@@ -1501,11 +1474,11 @@ export function getUrlFromBackgroundImage(backgroundImage: string) {
   return matches
 }
 
-export const getTitle = (browser: BrowserInterface) =>
+export const getTitle = (browser: Playwright) =>
   browser.elementByCss('title').text()
 
 async function checkMeta(
-  browser: BrowserInterface,
+  browser: Playwright,
   queryValue: string,
   expected: RegExp | string | string[] | undefined | null,
   queryKey: string = 'property',
@@ -1532,7 +1505,7 @@ async function checkMeta(
   }
 }
 
-export function createDomMatcher(browser: BrowserInterface) {
+export function createDomMatcher(browser: Playwright) {
   /**
    * @param tag - tag name, e.g. 'meta'
    * @param query - query string, e.g. 'name="description"'
@@ -1598,7 +1571,7 @@ export function createMultiHtmlMatcher($: ReturnType<typeof cheerio.load>) {
   }
 }
 
-export function createMultiDomMatcher(browser: BrowserInterface) {
+export function createMultiDomMatcher(browser: Playwright) {
   /**
    * @param tag - tag name, e.g. 'meta'
    * @param queryKey - query key, e.g. 'property'
@@ -1637,13 +1610,13 @@ export function createMultiDomMatcher(browser: BrowserInterface) {
 }
 
 export const checkMetaNameContentPair = (
-  browser: BrowserInterface,
+  browser: Playwright,
   name: string,
   content: string | string[]
 ) => checkMeta(browser, name, content, 'name')
 
 export const checkLink = (
-  browser: BrowserInterface,
+  browser: Playwright,
   rel: string,
   content: string | string[]
 ) => checkMeta(browser, rel, content, 'rel', 'link', 'href')
@@ -1675,7 +1648,7 @@ export async function getStackFramesContent(browser) {
   return stackFramesContent
 }
 
-export async function toggleCollapseCallStackFrames(browser: BrowserInterface) {
+export async function toggleCollapseCallStackFrames(browser: Playwright) {
   const button = await browser.elementByCss('[data-expand-ignore-button]')
   const lastExpanded = await button.getAttribute('data-expand-ignore-button')
   await button.click()
@@ -1709,7 +1682,7 @@ export function createNowRouteMatches(
   return urlSearchParams
 }
 
-export async function assertNoConsoleErrors(browser: BrowserInterface) {
+export async function assertNoConsoleErrors(browser: Playwright) {
   const logs = await browser.log()
   const warningsAndErrors = logs.filter((log) => {
     return (
@@ -1726,7 +1699,7 @@ export async function assertNoConsoleErrors(browser: BrowserInterface) {
 }
 
 export async function getHighlightedDiffLines(
-  browser: BrowserInterface
+  browser: Playwright
 ): Promise<[string, string][]> {
   const lines = await browser.elementsByCss(
     '[data-nextjs-container-errors-pseudo-html--diff]'
