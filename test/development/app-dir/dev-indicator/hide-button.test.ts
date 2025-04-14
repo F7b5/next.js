@@ -3,8 +3,10 @@ import {
   assertHasDevToolsIndicator,
   assertNoDevToolsIndicator,
   openDevToolsIndicatorPopover,
+  retry,
   waitFor,
 } from 'next-test-utils'
+import type { Playwright } from 'next-webdriver'
 
 const COOLDOWN = 3000
 
@@ -15,6 +17,11 @@ describe('dev indicator - Hide DevTools Button', () => {
       __NEXT_DEV_INDICATOR_COOLDOWN_MS: `${COOLDOWN}`,
     },
   })
+
+  // TODO: handle changed ports automatically when restarting the server
+  function browserGet(browser: Playwright, href: string) {
+    return browser.get(new URL(href, next.url).href)
+  }
 
   it('should show the dev indicator when the server is manually restarted', async () => {
     const browser = await next.browser('/')
@@ -28,9 +35,13 @@ describe('dev indicator - Hide DevTools Button', () => {
     await next.stop()
     await next.start()
 
-    const browser2 = await next.browser('/')
-    await browser2.refresh()
-    await assertHasDevToolsIndicator(browser2)
+    await retry(
+      () => browserGet(browser, '/'),
+      undefined,
+      undefined,
+      'wait for dev server to start up again'
+    )
+    await assertHasDevToolsIndicator(browser)
   })
 
   it('should still hide the dev indicator after reloading the page', async () => {

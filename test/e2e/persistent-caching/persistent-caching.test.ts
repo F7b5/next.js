@@ -1,11 +1,17 @@
 import { nextTestSetup } from 'e2e-utils'
 import { waitFor } from 'next-test-utils'
+import type { Playwright } from 'next-webdriver'
 
 describe('persistent-caching', () => {
   const { skipped, next, isNextDev } = nextTestSetup({
     files: __dirname,
     skipDeployment: true,
   })
+
+  // TODO: handle changed ports automatically when restarting the server
+  function browserGet(browser: Playwright, href: string) {
+    return browser.get(new URL(href, next.url).href)
+  }
 
   if (skipped) {
     return
@@ -32,44 +38,32 @@ describe('persistent-caching', () => {
   }
 
   it('should persistent cache loaders', async () => {
-    let appTimestamp, pagesTimestamp
-    {
-      const browser = await next.browser('/')
-      appTimestamp = await browser.elementByCss('main').text()
-      await browser.close()
-    }
-    {
-      const browser = await next.browser('/pages')
-      pagesTimestamp = await browser.elementByCss('main').text()
-      await browser.close()
-    }
+    let appTimestamp: string, pagesTimestamp: string
+    const browser = await next.browser('/')
+
+    await browserGet(browser, '/')
+    appTimestamp = await browser.elementByCss('main').text()
+
+    await browserGet(browser, '/pages')
+    pagesTimestamp = await browser.elementByCss('main').text()
+
     await restartCycle()
 
-    {
-      const browser = await next.browser('/')
-      // TODO Persistent Caching for webpack dev server is broken
-      expect(await browser.elementByCss('main').text()).toBe(appTimestamp)
-      await browser.close()
-    }
-    {
-      const browser = await next.browser('/pages')
-      // TODO Persistent Caching for webpack dev server is broken
-      expect(await browser.elementByCss('main').text()).toBe(pagesTimestamp)
-      await browser.close()
-    }
+    await browserGet(browser, '/')
+    // TODO Persistent Caching for webpack dev server is broken
+    expect(await browser.elementByCss('main').text()).toBe(appTimestamp)
+
+    await browserGet(browser, '/pages')
+    // TODO Persistent Caching for webpack dev server is broken
+    expect(await browser.elementByCss('main').text()).toBe(pagesTimestamp)
   })
 
   it('should allow to change files while stopped', async () => {
-    {
-      const browser = await next.browser('/')
-      expect(await browser.elementByCss('p').text()).toBe('hello world')
-      await browser.close()
-    }
-    {
-      const browser = await next.browser('/pages')
-      expect(await browser.elementByCss('p').text()).toBe('hello world')
-      await browser.close()
-    }
+    const browser = await next.browser('/')
+    expect(await browser.elementByCss('p').text()).toBe('hello world')
+
+    await browserGet(browser, '/pages')
+    expect(await browser.elementByCss('p').text()).toBe('hello world')
 
     await stop()
 
@@ -86,20 +80,17 @@ describe('persistent-caching', () => {
           },
           async () => {
             await start()
-            {
-              const browser = await next.browser('/')
-              expect(await browser.elementByCss('p').text()).toBe(
-                'hello persistent caching'
-              )
-              await browser.close()
-            }
-            {
-              const browser = await next.browser('/pages')
-              expect(await browser.elementByCss('p').text()).toBe(
-                'hello persistent caching'
-              )
-              await browser.close()
-            }
+
+            await browserGet(browser, '/')
+            expect(await browser.elementByCss('p').text()).toBe(
+              'hello persistent caching'
+            )
+
+            await browserGet(browser, '/pages')
+            expect(await browser.elementByCss('p').text()).toBe(
+              'hello persistent caching'
+            )
+
             await stop()
           }
         )
