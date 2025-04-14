@@ -206,7 +206,17 @@ export default async function webdriver(
     }
   }
 
-  const browser = new Playwright(sharedState, context)
+  // TODO: this can change if the next server is stopped and started again
+  // we have some tests work around this:
+  // - test/development/app-dir/dev-indicator/hide-button.test.ts
+  // - test/e2e/persistent-caching/persistent-caching.test.ts
+  const baseUrl = getFullUrl(
+    appPortOrUrl,
+    '',
+    isBrowserStack ? deviceIP : 'localhost'
+  )
+
+  const browser = new Playwright(sharedState, context, baseUrl)
   previousBrowser = browser
 
   afterCurrentTest(async () => {
@@ -217,7 +227,7 @@ export default async function webdriver(
   })
   ;(global as any).browserName = browserOptions.browserName
 
-  // TODO: `appPortOrUrl` can change if the next server is stopped and started again
+  // TODO: this can change if the next server is stopped and started again
   // some tests work around this:
   // - test/production/prerender-prefetch/index.test.ts
   // - test/development/app-dir/dev-indicator/hide-button.test.ts

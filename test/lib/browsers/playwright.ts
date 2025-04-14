@@ -400,7 +400,8 @@ type PageState = {
 export class Playwright<TCurrent = any> {
   constructor(
     private sharedState: SharedPlaywrightState,
-    private context: BrowserContextWrapper
+    private context: BrowserContextWrapper,
+    private baseUrl: string
   ) {}
 
   private _pageState: PageState | null = null
@@ -484,6 +485,7 @@ export class Playwright<TCurrent = any> {
   }
 
   async get(url: string): Promise<void> {
+    url = this.resolveUrl(url)
     const page = this.currentPage()
     await page.goto(url)
   }
@@ -499,6 +501,8 @@ export class Playwright<TCurrent = any> {
       retryWaitHydration?: boolean
     }
   ) {
+    url = this.resolveUrl(url)
+
     if (this._pageState) {
       // loadPage may be called multiple times within a single test.
       // in that case, we need to reset.
@@ -609,6 +613,27 @@ export class Playwright<TCurrent = any> {
     if (waitHydration && this.context.options.javaScriptEnabled) {
       await this.waitForHydration(opts?.retryWaitHydration)
     }
+  }
+
+  resolveUrl(url: string) {
+    // no strictmode, so null/undefined can happen
+    if (typeof url !== 'string') {
+      throw new Error(`Expected a valid url string, got ${url}`)
+    }
+    return new URL(url, this.baseUrl).href
+  }
+
+  setBaseUrl(baseUrl: string) {
+    // no strictmode, so null/undefined can happen
+    if (typeof baseUrl !== 'string') {
+      throw new Error(`Expected a valid url string, got ${baseUrl}`)
+    }
+    try {
+      new URL(baseUrl)
+    } catch {
+      throw new Error(`Expected baseUrl to be a valid URL, got: '${baseUrl}'`)
+    }
+    this.baseUrl = baseUrl
   }
 
   async waitForHydration(retry = false) {
