@@ -602,10 +602,22 @@ export class Playwright<TCurrent = any> {
     this.state = 'uninitialized'
   }
 
-  async get(url: string): Promise<void> {
+  async get(
+    url: string,
+    opts?: {
+      waitHydration?: boolean
+      retryWaitHydration?: boolean
+    }
+  ): Promise<void> {
     url = this.resolveUrl(url)
     const page = this.currentPage()
-    await page.goto(url)
+
+    await page.goto(url, { waitUntil: 'load' })
+
+    const waitHydration = opts?.waitHydration ?? true
+    if (waitHydration && this.context.options.javaScriptEnabled) {
+      await this.waitForHydration(opts?.retryWaitHydration)
+    }
   }
 
   async loadPage(
@@ -720,12 +732,10 @@ export class Playwright<TCurrent = any> {
     this._pageState = newPageState
     this.state = 'ready'
 
-    await newPageState.page.goto(url, { waitUntil: 'load' })
-
-    const waitHydration = opts?.waitHydration ?? true
-    if (waitHydration && this.context.options.javaScriptEnabled) {
-      await this.waitForHydration(opts?.retryWaitHydration)
-    }
+    await this.get(url, {
+      waitHydration: opts?.waitHydration,
+      retryWaitHydration: opts?.retryWaitHydration,
+    })
   }
 
   resolveUrl(url: string) {
