@@ -19,16 +19,13 @@ describe('ReactRefreshLogBox _app _document', () => {
     const { browser, session } = sandbox
     await expect(browser).toDisplayRedbox(`
      {
-       "description": "Error: The default export is not a React Component in page: "/_app"",
+       "description": "The default export is not a React Component in page: "/_app"",
        "environmentLabel": null,
        "label": "Runtime Error",
        "source": null,
        "stack": [],
      }
     `)
-    expect(await session.getRedboxDescription()).toMatchInlineSnapshot(
-      `"Error: The default export is not a React Component in page: "/_app""`
-    )
 
     await session.patch(
       'pages/_app.js',
@@ -51,7 +48,7 @@ describe('ReactRefreshLogBox _app _document', () => {
 
     await expect(browser).toDisplayRedbox(`
      {
-       "description": "Error: The default export is not a React Component in page: "/_document"",
+       "description": "The default export is not a React Component in page: "/_document"",
        "environmentLabel": null,
        "label": "Runtime Error",
        "source": null,
@@ -154,11 +151,11 @@ describe('ReactRefreshLogBox _app _document', () => {
     } else {
       await expect(browser).toDisplayRedbox(`
        {
-         "description": "Error:   x Expression expected",
+         "description": "  x Expression expected",
          "environmentLabel": null,
          "label": "Build Error",
          "source": "./pages/_app.js
-       Error:   x Expression expected
+         x Expression expected
           ,-[2:1]
         1 | function MyApp({ Component, pageProps }) {
         2 |   return <<Component {...pageProps} />;
@@ -268,11 +265,11 @@ describe('ReactRefreshLogBox _app _document', () => {
     } else {
       await expect(browser).toDisplayRedbox(`
        {
-         "description": "Error:   x Unexpected token \`{\`. Expected identifier, string literal, numeric literal or [ for the computed key",
+         "description": "  x Unexpected token \`{\`. Expected identifier, string literal, numeric literal or [ for the computed key",
          "environmentLabel": null,
          "label": "Build Error",
          "source": "./pages/_document.js
-       Error:   x Unexpected token \`{\`. Expected identifier, string literal, numeric literal or [ for the computed key
+         x Unexpected token \`{\`. Expected identifier, string literal, numeric literal or [ for the computed key
           ,-[3:1]
         1 | import Document, { Html, Head, Main, NextScript } from 'next/document'
         2 |

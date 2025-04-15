@@ -213,7 +213,7 @@ describe.each([
       } else if (basePath === '') {
         expect(source).toMatchInlineSnapshot(`
           "./pages/hmr/about2.js
-          Error:   x Unexpected token. Did you mean \`{'}'}\` or \`&rbrace;\`?
+            x Unexpected token. Did you mean \`{'}'}\` or \`&rbrace;\`?
              ,-[7:1]
            4 |       <p>This is the about page.</p>
            5 |     div
@@ -276,7 +276,7 @@ describe.each([
       } else if (basePath === '/docs') {
         expect(source).toMatchInlineSnapshot(`
           "./pages/hmr/about2.js
-          Error:   x Unexpected token. Did you mean \`{'}'}\` or \`&rbrace;\`?
+            x Unexpected token. Did you mean \`{'}'}\` or \`&rbrace;\`?
              ,-[7:1]
            4 |       <p>This is the about page.</p>
            5 |     div
@@ -440,7 +440,7 @@ describe.each([
 
         await assertHasRedbox(browser)
         expect(await getRedboxDescription(browser)).toMatchInlineSnapshot(
-          `"Error: The default export is not a React Component in page: "/hmr/about5""`
+          `"The default export is not a React Component in page: "/hmr/about5""`
         )
 
         await next.patchFile(aboutPage, aboutContent)
@@ -530,7 +530,7 @@ describe.each([
 
         await assertHasRedbox(browser)
         expect(await getRedboxDescription(browser)).toMatchInlineSnapshot(
-          `"Error: The default export is not a React Component in page: "/hmr/about7""`
+          `"The default export is not a React Component in page: "/hmr/about7""`
         )
 
         await next.patchFile(aboutPage, aboutContent)
@@ -716,7 +716,7 @@ describe.each([
           expect(next.normalizeTestDirContent(redboxSource))
             .toMatchInlineSnapshot(`
             "./components/parse-error.js
-            Error:   x Expression expected
+              x Expression expected
                ,-[3:1]
              1 | This
              2 | is
@@ -756,7 +756,7 @@ describe.each([
 
         await assertHasRedbox(browser)
         expect(await getRedboxDescription(browser)).toMatchInlineSnapshot(
-          `"Error: an-expected-error-in-gip"`
+          `"an-expected-error-in-gip"`
         )
 
         await next.patchFile(
@@ -795,7 +795,7 @@ describe.each([
       try {
         await assertHasRedbox(browser)
         expect(await getRedboxDescription(browser)).toMatchInlineSnapshot(
-          `"Error: an-expected-error-in-gip"`
+          `"an-expected-error-in-gip"`
         )
 
         const erroredPage = join('pages', 'hmr', 'error-in-gip.js')
