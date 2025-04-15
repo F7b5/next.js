@@ -144,7 +144,6 @@ async function createTreeCodeFromPath(
 }> {
   const splittedPath = pagePath.split(/[\\/]/, 1)
   const isNotFoundRoute = page === UNDERSCORE_NOT_FOUND_ROUTE_ENTRY
-
   const isDefaultNotFound = isAppBuiltinNotFoundPage(pagePath)
   const appDirPrefix = isDefaultNotFound ? APP_DIR_ALIAS : splittedPath[0]
   const pages: string[] = []
@@ -689,7 +688,10 @@ const nextAppLoader: AppLoader = async function nextAppLoader() {
     collectedDeclarations,
   })
 
-  if (!treeCodeResult.rootLayout) {
+  const isAppErrorRoute = page === '/_error/page'
+  // Doing the layout assertion to ensure layout is defined.
+  // Skip assertion for app error route since it is page.js already contains html/body.
+  if (!treeCodeResult.rootLayout && !isAppErrorRoute) {
     if (!isDev) {
       // If we're building and missing a root layout, exit the build
       Log.error(
