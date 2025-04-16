@@ -47,9 +47,6 @@ export async function prospectiveRenderAppPage(
   if (page === '/_not-found/page') {
     pathname = '/404'
   }
-  if (page === '/_error/page') {
-    pathname = '/_error'
-  }
 
   try {
     await lazyRenderAppPage(

@@ -3897,8 +3897,6 @@ export default abstract class Server<
         removeRequestMeta(ctx.req, 'customErrorRender')
       }
 
-      await this.renderErrorToResponse(ctx, err)
-
       const isWrappedError = err instanceof WrappedBuildError
 
       if (!isWrappedError) {
@@ -3937,7 +3935,6 @@ export default abstract class Server<
       return null
     }
 
-    console.log('No matching route found for', pathname)
     res.statusCode = 404
     return this.renderErrorToResponse(ctx, null)
   }
